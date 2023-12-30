@@ -105,7 +105,7 @@ Main:[
         color: darkslategray
         font-size: 18
     ]
-    isVisible: true
+    input: false
     onclick: function(elm) {
         alert("Welcome to the AxisJS Framework experience!");
     }
