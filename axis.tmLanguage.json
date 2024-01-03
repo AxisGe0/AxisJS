@@ -1,0 +1,79 @@
+{
+  "scopeName": "source.axis",
+  "name": "Axis",
+  "patterns": [
+    {
+      "include": "#key-value-pair"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#punctuation"
+    },
+    {
+      "include": "#functions"
+    }
+  ],
+  "repository": {
+    "key-value-pair": {
+      "patterns": [
+        {
+          "name": "entity.name.function.axis",
+          "begin": "\\bfunction\\b",
+          "end": "(?<=};)",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.other.function.axis"
+            }
+          },
+          "patterns": [
+            {
+              "include": "source.js"
+            }
+          ]
+        },
+        {
+          "name": "variable.object.key.axis",
+          "begin": "\\b[a-zA-Z_][a-zA-Z0-9_-]*\\b",
+          "end": "(?=:)"
+        },
+        {
+          "match": ":"
+        },
+        {
+          "name": "string.quoted.double.value.axis",
+          "begin": "(?<=:)(?![^\\[]*\\[)",
+          "end": "$",
+          "patterns": [
+            {
+              "match": ".",
+              "name": "string.quoted.double.value.axis"
+            }
+          ]
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.axis",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.axis",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.colon.axis",
+          "match": ":"
+        }
+      ]
+    }
+  }
+}
