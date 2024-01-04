@@ -1,0 +1,54 @@
+Main:[
+    style:[
+        display: block
+        width:100%
+        height:100%
+    ]
+    nested:[
+        output:[
+            style:[
+                position: absolute
+                display: inline-block
+                height:100%
+                width:48%
+                right:0
+                border:0.5vh solid black
+            ]
+        ]
+        editor:[
+            content:%replace% Tedst
+            replace: test
+            style:[
+                position: absolute
+                display: inline-block
+                height:100%
+                width:48%
+                left:0
+            ]
+            onload:function(elm){
+                var output = ax.element("output")
+                var editor = ace.edit(elm.current);
+                editor.setTheme("ace/theme/monokai");
+                editor.getSession().setMode("ace/mode/javascript");
+                editor.getSession().setUseWorker(false);
+              
+                var OnChange = function(data){
+                    var jsonData = ax.ParseAX(data);
+                    while(output.current.firstChild){
+                        output.current.removeChild(output.current.firstChild);
+                    }
+                    Object.values(jsonData).forEach((item) => {
+                        output.addelement(item);
+                    });
+                }
+                
+                editor.session.setValue(example)
+                OnChange(example)
+                editor.getSession().on('change', function (data) {
+                    var data = editor.getSession().getValue()
+                    setTimeout(function(){ OnChange(data) })
+                })
+            };
+        ]
+    ]
+]
