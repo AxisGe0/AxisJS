@@ -26,7 +26,7 @@
 
 
 ## Getting Started
-**[Demo here](https://axisge0.github.io/ax-editor/)**
+**[Demo here](https://axisge0.github.io/AxisJS/)**
 
 To begin using the AxisJS Framework:
 
@@ -117,7 +117,7 @@ Main:[
             content: Click me!
             onclick: function(elm) {
                 console.log("Button clicked");
-            }
+            };
         ]
     ]
 ]
@@ -191,10 +191,10 @@ Button:[
     ]
     onclick: function(elm) {
         ax.element("Button").replace("Now Clicked")
-    }
+    };
     onload: function(elm) {
         console.log("Button is now loaded and visible.");
-    }
+    };
     nested:[
         // ... nested elements if any with the same format above
     ]
