@@ -148,6 +148,17 @@ class AX{
     }
 
     addelement(data) {
+        if(data.quantity){
+            var quan = data.quantity
+            data.quantity = undefined
+            for(var i =0;i<quan;i++){
+                var newelm = this.addelement(data)
+                if(data.children){
+                    eval(`(${data.children})(i,newelm)`)
+                }
+            }
+            return 
+        }
         data.cls = data.cls || this.randomelement(10) 
         data.content = data.content || ''
         if (data.input){
