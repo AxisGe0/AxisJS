@@ -11,11 +11,15 @@ var example = `Main:[
     ]
     nested:[
         testelement:[
-            content: Hello World 2
+            content: Hello World %replace%
+            quantity:5
             style:[
                 display:block
                 font-size:2vh
             ]
+            children:function(k,v){
+                v.replace(k+1)
+            };
             onclick:function(){
                 alert("Hello world 2 was clicked")
             };
