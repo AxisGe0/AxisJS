@@ -245,18 +245,12 @@ class AX{
             randomelement:this.randomelement
         }
         if(data.onclick){
-            if (typeof data.onclick == 'function'){
-                element.onclick = function(){data.onclick(retval)}
-            }else{
-                element.onclick = function(){eval(`(${data.onclick})(retval)`)}
-            }
+            element.onclick = function() {
+                new Function('retval', `(${data.onclick})(retval)`)(retval);
+            };
         }
         if(data.onload){
-            if (typeof data.onload == 'function'){
-                data.onload(element)
-            }else{
-                eval(`(${data.onload})(retval)`)
-            }
+            new Function('retval', `(${data.onload})(retval)`)(retval);
         }
         this.elements.push(retval);
         if (data.nested) {
