@@ -154,7 +154,7 @@ class AX{
             for(var i =0;i<quan;i++){
                 var newelm = this.addelement(data)
                 if(data.children){
-                    eval(`(${data.children})(i,newelm)`)
+                    new Function('i','newelm', `(${data.children})(i,newelm)`)(i,newelm);
                 }
             }
             return 
