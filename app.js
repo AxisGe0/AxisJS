@@ -28,7 +28,7 @@ var example = `Main:[
                 v.replace(v.index+1)
             };
             onclick:function(elm){
-                alert(`Hello world ${elm.index+1} was clicked`)
+                alert(\`Hello world \${elm.index+1} was clicked\`)
             };
         ]
     ]
