@@ -190,7 +190,7 @@ class AX{
             },
             update(html){
                 if(html){
-                    data.content = html
+                    //data.content = html // Causing Access Element manipluation fix later
                     element.innerHTML = html
                     return retval
                 }else{
