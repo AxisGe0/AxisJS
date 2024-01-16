@@ -5,23 +5,30 @@ var example = `Main:[
     content: Hello World
     style:[
         color: red
-        position:absolute
+        position: absolute
         left:50%
-        transform:translate(-50%)
+        transform: translate(-50%)
     ]
     nested:[
-        testelement:[
+        normalelement:[
+            content: Normal Element
+            style:[
+                display: block
+                font-size:3vh
+            ]
+        ]
+        quanityelement:[
             content: Hello World %replace%
             quantity:5
             style:[
                 display:block
                 font-size:2vh
             ]
-            children:function(k,v){
-                v.replace(k+1)
+            onload:function(v){
+                v.replace(v.index+1)
             };
-            onclick:function(){
-                alert("Hello world 2 was clicked")
+            onclick:function(elm){
+                alert(`Hello world ${elm.index+1} was clicked`)
             };
         ]
     ]
