@@ -152,8 +152,9 @@ class AX{
             var quan = data.quantity
             data.quantity = undefined
             for(var i =0;i<quan;i++){
+                data.index = i
                 var newelm = this.addelement(data)
-                if(data.children){
+                if(data.children){//Outdated
                     new Function('i','newelm', `(${data.children})(i,newelm)`)(i,newelm);
                 }
             }
@@ -181,6 +182,7 @@ class AX{
             elements:[],
             addelement:this.addelement,
             identifier:data.identifier,
+            index:data.index,
             replace(text){
                 var replace = element.querySelector('dynamic');
                 if (replace) replace.innerHTML = text;
