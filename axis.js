@@ -23,6 +23,15 @@ class AX{
             this.addelement(item);
         });
     }
+    
+    async loadmodule(src, callback) {
+        const response = await fetch(src);
+        const fxnstr = await response.text();
+        var toReturn = function(elm){
+            return new Function('elm', `(${fxnstr})(elm)`)(elm);
+        }
+        callback(toReturn)
+    }
 
     ParseAX(input, assign) {
         const result = {};
