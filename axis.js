@@ -293,6 +293,7 @@ class AX{
             }
         };
         if (method.toUpperCase() === "POST" && data) {
+            xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(data);
         } else {
             xhr.send();
