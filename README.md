@@ -111,7 +111,7 @@ Main:[
     input: false
     onclick: function(elm) {
         alert("Welcome to the AxisJS Framework experience!");
-    }
+    };
     nested:[
         Button:[
             content: Click me!
