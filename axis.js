@@ -178,7 +178,9 @@ class AX{
             var element = document.createElement(data.cls)
         }
         element.innerHTML = data.content.replace('%replace%',`<dynamic>${data.replace || ''}</dynamic>`);
-        Object.assign(element.style, data.style);
+        //Object.assign(element.style, data.style); Old
+        data.attr  = data.attr ? data.attr.push({styleId:this.randomelement(12)}) : {styleId:this.randomelement(12)}
+        CSSManager.MakeCSSBlob(data.attr.styleId, data.style)
         if (data.attr) {
             Object.entries(data.attr).forEach(([attributeName, attributeValue]) => {
                 element.setAttribute(attributeName, attributeValue);
@@ -298,5 +300,32 @@ class AX{
         } else {
             xhr.send();
         }
+    }
+}
+
+CSSManager = {
+    cssBlob:undefined,
+    css:"",
+    MakeCSSBlob(cls, style = {}) {
+        if (Object.keys(style).length === 0) {
+            return;
+        }
+        this.css = `${this.css}[styleid="${cls}"] {${this.objectToCSS(style)}}`;
+        const blob = new Blob([this.css], { type: 'text/css' });
+        const url = URL.createObjectURL(blob);
+        const linkElement = Object.assign(document.createElement('link'), {
+            rel: 'stylesheet',
+            type: 'text/css',
+            href: url,
+        });
+        document.head.appendChild(linkElement);
+        URL.revokeObjectURL(url);
+        this.cssBlob && this.cssBlob.remove();
+        this.cssBlob = linkElement;
+    },
+    objectToCSS(style) {
+        return Object.keys(style).reduce((acc, key) => (
+            acc + key.split(/(?=[A-Z])/).join('-').toLowerCase() + ':' + style[key] + ';'
+        ), '');
     }
 }
