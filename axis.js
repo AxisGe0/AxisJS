@@ -178,9 +178,9 @@ class AX{
             var element = document.createElement(data.cls)
         }
         element.innerHTML = data.content.replace('%replace%',`<dynamic>${data.replace || ''}</dynamic>`);
-        //Object.assign(element.style, data.style); Old
-        data.attr  = data.attr ? data.attr.push({styleId:this.randomelement(12)}) : {styleId:this.randomelement(12)}
-        CSSManager.MakeCSSBlob(data.attr.styleId, data.style)
+        Object.assign(element.style, data.style);
+        //data.attr  = data.attr ? data.attr.push({styleId:this.randomelement(12)}) : {styleId:this.randomelement(12)}
+        //CSSManager.MakeCSSBlob(data.attr.styleId, data.style)
         if (data.attr) {
             Object.entries(data.attr).forEach(([attributeName, attributeValue]) => {
                 element.setAttribute(attributeName, attributeValue);
