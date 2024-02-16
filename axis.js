@@ -1,3 +1,4 @@
+var c_values = {}
 class AX{
     constructor(data) {
         this.parent = document.querySelector(data.parent);
