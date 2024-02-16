@@ -19,6 +19,26 @@ class AX{
     async LoadFrom(axfile) {
         const scriptPath = new URL(axfile, document.currentScript.src).href;
         const jsonData = await this.LoadConfig(scriptPath);
+        if(jsonData._init){
+            c_values = jsonData._init;
+            delete jsonData._init;
+            var sortVars = function (data) {
+                for (var key in data) {
+                    if (data[key]) {
+                        for (var _key in data[key]) {
+                            var variable = data[key][_key]
+                            if (variable && typeof variable == "string" && variable.includes("--")) {
+                                data[key][_key] = c_values[variable] || "__notdef"
+                            }
+                        }
+                        if (data[key].nested) {
+                            sortVars(data[key].nested)
+                        }
+                    }
+                }
+            }
+            sortVars(jsonData)
+        }
         Object.values(jsonData).forEach((item) => {
             this.addelement(item);
         });
