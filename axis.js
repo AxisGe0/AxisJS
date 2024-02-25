@@ -323,30 +323,3 @@ class AX{
         }
     }
 }
-
-CSSManager = {
-    cssBlob:undefined,
-    css:"",
-    MakeCSSBlob(cls, style = {}) {
-        if (Object.keys(style).length === 0) {
-            return;
-        }
-        this.css = `${this.css}[styleid="${cls}"] {${this.objectToCSS(style)}}`;
-        const blob = new Blob([this.css], { type: 'text/css' });
-        const url = URL.createObjectURL(blob);
-        const linkElement = Object.assign(document.createElement('link'), {
-            rel: 'stylesheet',
-            type: 'text/css',
-            href: url,
-        });
-        document.head.appendChild(linkElement);
-        URL.revokeObjectURL(url);
-        this.cssBlob && this.cssBlob.remove();
-        this.cssBlob = linkElement;
-    },
-    objectToCSS(style) {
-        return Object.keys(style).reduce((acc, key) => (
-            acc + key.split(/(?=[A-Z])/).join('-').toLowerCase() + ':' + style[key] + ';'
-        ), '');
-    }
-}
