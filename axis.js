@@ -30,7 +30,12 @@ class AX{
                 for (const key in obj) {
                     if (obj.hasOwnProperty(key)) {
                         if (typeof obj[key] === 'string' && obj[key].includes("--")) {
-                            obj[key] = c_values[obj[key]] || "__notdef";
+                            var toAssign = c_values[obj[key]]
+                            if (typeof toAssign == "object"){
+                                obj[key] = {...toAssign}
+                            } else{
+                                obj[key] = toAssign || "__notdef";
+                            }
                         } else if (typeof obj[key] === 'object') {
                             sortVars(obj[key]);
                         }
