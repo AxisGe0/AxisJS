@@ -20,6 +20,21 @@ class AX{
     async LoadFrom(axfile) {
         const scriptPath = new URL(axfile, document.currentScript.src).href;
         const jsonData = await this.LoadConfig(scriptPath);
+        var assignIden = function(obj){
+            if (!obj || typeof obj !== 'object') {
+                return;
+            }
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    if(typeof obj[key] == "object"){
+                        obj[key].identifier = key
+                    }
+                }
+                if (typeof obj[key] === 'object' && obj[key].nested) {
+                    assignIden(obj[key].nested);
+                }
+            }
+        }
         if(jsonData._init){
             c_values = jsonData._init;
             delete jsonData._init;
@@ -42,24 +57,9 @@ class AX{
                     }
                 }
             }
-            var assignIden = function(obj){
-                if (!obj || typeof obj !== 'object') {
-                    return;
-                }
-                for (const key in obj) {
-                    if (obj.hasOwnProperty(key)) {
-                        if(typeof obj[key] == "object"){
-                            obj[key].identifier = key
-                        }
-                    }
-                    if (typeof obj[key] === 'object' && obj[key].nested) {
-                        assignIden(obj[key].nested);
-                    }
-                }
-            }
             sortVars(jsonData)
-            assignIden(jsonData)
         }
+        assignIden(jsonData)
         Object.values(jsonData).forEach((item) => {
             this.addelement(item);
         });
