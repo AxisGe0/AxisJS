@@ -23,17 +23,16 @@ class AX{
         if(jsonData._init){
             c_values = jsonData._init;
             delete jsonData._init;
-            var sortVars = function (data) {
-                for (var key in data) {
-                    if (data[key]) {
-                        for (var _key in data[key]) {
-                            var variable = data[key][_key]
-                            if (variable && typeof variable == "string" && variable.includes("--")) {
-                                data[key][_key] = c_values[variable] || "__notdef"
-                            }
-                        }
-                        if (data[key].nested) {
-                            sortVars(data[key].nested)
+            var sortVars = function (obj) {
+                if (!obj || typeof obj !== 'object') {
+                    return;
+                }
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        if (typeof obj[key] === 'string' && obj[key].includes("--")) {
+                            obj[key] = c_values[obj[key]] || "__notdef";
+                        } else if (typeof obj[key] === 'object') {
+                            sortVars(obj[key]);
                         }
                     }
                 }
