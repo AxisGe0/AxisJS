@@ -9,7 +9,7 @@ class AX{
         try {
             const response = await fetch(axfile);
             const AxData = await response.text();
-            const JSObject = this.ParseAX(AxData,true);
+            const JSObject = this.ParseAX(AxData,false);
             return JSObject;
         } catch (error) {
             console.error('Error loading AX file:', error);
@@ -23,22 +23,37 @@ class AX{
         if(jsonData._init){
             c_values = jsonData._init;
             delete jsonData._init;
-            var sortVars = function (data) {
-                for (var key in data) {
-                    if (data[key]) {
-                        for (var _key in data[key]) {
-                            var variable = data[key][_key]
-                            if (variable && typeof variable == "string" && variable.includes("--")) {
-                                data[key][_key] = c_values[variable] || "__notdef"
-                            }
-                        }
-                        if (data[key].nested) {
-                            sortVars(data[key].nested)
+            var sortVars = function (obj) {
+                if (!obj || typeof obj !== 'object') {
+                    return;
+                }
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        if (typeof obj[key] === 'string' && obj[key].includes("--")) {
+                            obj[key] = c_values[obj[key]] || "__notdef";
+                        } else if (typeof obj[key] === 'object') {
+                            sortVars(obj[key]);
                         }
                     }
                 }
             }
+            var assignIden = function(obj){
+                if (!obj || typeof obj !== 'object') {
+                    return;
+                }
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        if(typeof obj[key] == "object"){
+                            obj[key].identifier = key
+                        }
+                    }
+                    if (typeof obj[key] === 'object' && obj[key].nested) {
+                        assignIden(obj[key].nested);
+                    }
+                }
+            }
             sortVars(jsonData)
+            assignIden(jsonData)
         }
         Object.values(jsonData).forEach((item) => {
             this.addelement(item);
