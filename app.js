@@ -1,6 +1,3 @@
-var ax = new AX({parent:'body'})
-var main = ax.LoadFrom('main.ax')
-
 var example = `Main:[
     content: Hello World
     style:[
@@ -33,3 +30,4 @@ var example = `Main:[
         ]
     ]
 ]`
+
