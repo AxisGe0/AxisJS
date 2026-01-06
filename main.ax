@@ -26,7 +26,7 @@ Main:[
                 left:0
             ]
             onload:function(elm){
-                var output = ax.element("output")
+                var output = ax.get("output")
                 var editor = ace.edit(elm.current);
                 editor.setTheme("ace/theme/monokai");
                 editor.getSession().setMode("ace/mode/javascript");
@@ -51,4 +51,5 @@ Main:[
             };
         ]
     ]
+
 ]
