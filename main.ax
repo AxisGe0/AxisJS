@@ -38,7 +38,7 @@ Main:[
                         output.current.removeChild(output.current.firstChild);
                     }
                     Object.values(jsonData).forEach((item) => {
-                        output.addelement(item);
+                        output.add(item);
                     });
                 }
                 
@@ -53,4 +53,5 @@ Main:[
     ]
 
 ]
+
 
