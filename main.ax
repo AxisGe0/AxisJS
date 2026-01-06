@@ -33,7 +33,7 @@ Main:[
                 editor.getSession().setUseWorker(false);
               
                 var OnChange = function(data){
-                    var jsonData = ax.ParseAX(data);
+                    var jsonData = ax.parse(data);
                     while(output.current.firstChild){
                         output.current.removeChild(output.current.firstChild);
                     }
@@ -53,3 +53,4 @@ Main:[
     ]
 
 ]
+
