@@ -5,26 +5,105 @@ class AX{
         this.elements = [];
     }
 
-    parse(input) {
+    async LoadConfig(axfile) {
+        try {
+            const response = await fetch(axfile);
+            const AxData = await response.text();
+            const JSObject = this.ParseAX(AxData,false);
+            return JSObject;
+        } catch (error) {
+            console.error('Error loading AX file:', error);
+            return null;
+        }
+    }
+    
+    async LoadFrom(axfile) {
+        const scriptPath = new URL(axfile, document.currentScript.src).href;
+        const jsonData = await this.LoadConfig(scriptPath);
+        var assignIden = function(obj){
+            if (!obj || typeof obj !== 'object') {
+                return;
+            }
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    if(typeof obj[key] == "object"){
+                        obj[key].identifier = key
+                    }
+                }
+                if (typeof obj[key] === 'object' && obj[key].nested) {
+                    assignIden(obj[key].nested);
+                }
+            }
+        }
+        if(jsonData._init){
+            c_values = jsonData._init;
+            delete jsonData._init;
+            var sortVars = function (obj) {
+                if (!obj || typeof obj !== 'object') {
+                    return;
+                }
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key)) {
+                        if (typeof obj[key] === 'string' && obj[key].includes("--")) {
+                            var toAssign = c_values[obj[key]]
+                            if (typeof toAssign == "object"){
+                                obj[key] = {...toAssign}
+                            } else{
+                                obj[key] = toAssign || "__notdef";
+                            }
+                        } else if (typeof obj[key] === 'object') {
+                            sortVars(obj[key]);
+                        }
+                    }
+                }
+            }
+            sortVars(jsonData)
+        }
+        assignIden(jsonData)
+        Object.values(jsonData).forEach((item) => {
+            this.addelement(item);
+        });
+    }
+    
+    async loadmodule(src, callback) {
+        const response = await fetch(src);
+        const fxnstr = await response.text();
+        var toReturn = function(elm){
+            return new Function('elm', `(${fxnstr})(elm)`)(elm);
+        }
+        callback(toReturn)
+    }
+
+    ParseAX(input, assign) {
         const result = {};
         let currentContext = result;
         const contextStack = [];
-        let isCollectingFunction = false;
-        let functionBody = '';
-        let functionKey = '';
+        let isCollectingFunction = false; // New state for detecting function collection
+        let functionBody = ''; // Variable to hold the function body
+        let functionKey = ''; // Variable to store the current function key
         const lines = input.split('\n').filter(line => line.trim().length > 0);
+    
         lines.forEach(line => {
             const indent = line.match(/^\s*/)[0].length;
             const cleanLine = line.trim();
             const isNestedStart = cleanLine.endsWith('[');
             const keyValuePattern = /^(.+?):\s*(.*)$/;
             const keyOnlyPattern = /^(.+?):\s*\[$/;
-            const functionPattern = /function\s*\(/;
+            const functionPattern = /function\s*\(/; // Pattern to detect the start of a function
+            //const functionPattern = /(\w+)\s*\(/; // Pattern to detect the start of a function
+            //const functionPattern = /^(.+?)\(\)\s*{$/; // Pattern to detect the start of a function
             let match;
+    
             if (isCollectingFunction) {
+                // Append the current line to the function body
                 functionBody += line + '\n';
+                // Check if the current line is the closing brace of the function
                 if (cleanLine === '};') {
+                    // Assign the collected function body to the last function key
+                    // and remove the trailing newline character
                     currentContext[functionKey] = functionBody.trim().replace('};','} ');
+                    //currentContext[functionKey] = functionBody.trim();
+                    // Reset the state
                     isCollectingFunction = false;
                     functionBody = '';
                     functionKey = '';
@@ -50,35 +129,43 @@ class AX{
                 match = cleanLine.match(keyValuePattern);
                 if (match) {
                     let [_, key, value] = match;
+                    // Check for the start of a function
                     if (functionPattern.test(cleanLine)) {
                         isCollectingFunction = true;
                         functionKey = key;
-                        functionBody += value + '\n';
+                        functionBody += value + '\n'; // Include the opening brace
                     } else {
-                        currentContext[key] = this.processVal(value);
+                        // Handle regular key-value pair
+                        currentContext[key] = this.ProcessValue(value);
                     }
                 }
             }
         });
-        return this.convertStrToFxn(result); //result;
-    }
-
-    convertStrToFxn(obj) {
-        const result = structuredClone(obj);
-        var recursiveCheck  = function(obj) {
-            for (const key in obj) {
-                if (typeof obj[key] === 'string' && obj[key].includes('function')) {
-                    obj[key] = new Function(`return (${obj[key]})`)();
-                } else if (obj[key] && typeof obj[key] === 'object') {
-                    recursiveCheck(obj[key]);
+    
+        // Assign identifiers if needed
+        if (assign){
+            Object.entries(result).forEach(([k,v]) => {
+                result[k].identifier = k
+                assign = function(data){
+                    if (data && data.nested){
+                        var data = data.nested
+                        Object.entries(data).forEach(([j,m]) =>{
+                            data[j].identifier = j
+                            if(data[j].identifier){
+                                assign(data[j])
+                            }
+                        })
+                    }
                 }
-            }
+                assign(result[k])
+            });
         }
-        recursiveCheck(result);
+    
         return result;
     }
-
-    processVal = function(value) {
+    
+    // Helper function to process the value as number, boolean, or string
+    ProcessValue(value) {
         if (value.startsWith('"') && value.endsWith('"')) {
             return value.slice(1, -1);
         } else if (!isNaN(value) && value !== '') {
@@ -90,147 +177,52 @@ class AX{
         }
         return value;
     }
-    
-    async load(file){
-        try{
-            const response = await fetch(file);
-            var data = this.parse(await response.text());
-            var imports = data.imports
-            delete data.imports;
-            if(imports){
-                for(let k in imports){
-                    const response = await fetch(imports[k]);
-                    const data = await response.text();
-                    const object = this.parse(data,false);
-                    c_values[`--${k}`] = object.export
+
+    element(identifier) {
+        const searchElement = (element) => {
+            if (element && element.elements) {
+                const nestedElements = Object.values(element.elements);
+                for (const nestedElement of nestedElements) {
+                    if (nestedElement.identifier === identifier) {
+                        return nestedElement;
+                    }
+                    const foundElement = searchElement(nestedElement);
+                    if (foundElement) {
+                        return foundElement;
+                    }
                 }
             }
-            this.searchVars(data)
-            this.sortVars(c_values)// Tests needed
-            this.sortVars(data)
-            this.assignIdentifiers(data)
-            Object.values(data).forEach((item) => {
-                this.add(item);
-            });
-        } catch(err){
-            console.warn(err)
             return null;
-        }
+        };
+        return searchElement(this);
     }
 
-    searchVars(obj){
-        if (!obj || typeof obj !== 'object') {
-            return;
-        }
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                if(key.includes('--')){
-                    c_values[key] = obj[key]
-                    delete obj[key];
-                }
-                this.searchVars(obj[key]);
-            }
-        }
-    }
-
-    sortVars(obj) {
-        if (!obj || typeof obj !== 'object') {
-            return;
-        }
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                if (typeof obj[key] === 'string' && obj[key].includes("--")) {
-                    var toAssign = c_values[obj[key]]
-                    if (typeof toAssign == "object"){
-                        obj[key] = {...toAssign}
-                    } else{
-                        obj[key] = toAssign || "__notdef";
-                    }
-                } else if (typeof obj[key] === 'object') {
-                    this.sortVars(obj[key]);
-                }
-            }
-        }
-    }
-
-    assignIdentifiers(obj) {
-        if (!obj || typeof obj !== 'object') {
-            return;
-        }
-        for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-                if(typeof obj[key] == "object"){
-                    obj[key].identifier = key
-                }
-            }
-            if (typeof obj[key] === 'object' && obj[key].nested) {
-                this.assignIdentifiers(obj[key].nested);
-            }
-        }
-    }
-
-    get(identifier) {
-        var search = function(data,identifier){
-            if(data){
-                for(let key in data){
-                    var v = data[key]
-                    if(v.identifier == identifier){
-                        return v
-                    }
-                    var found =  search(v.elements,identifier)
-                    if(found){
-                        return found;
-                    }
-                }
-            }
-        }
-        return search(this.elements,identifier)
-    }
-
-    getVar(val) {
-        return (c_values[`--${val}`]);
-    }
-
-    add(data){
+    addelement(data) {
         if(data.quantity){
             var quan = data.quantity
             data.quantity = undefined
             for(var i =0;i<quan;i++){
-                this.add({...data,index:i})
+                data.index = i
+                var newelm = this.addelement(data)
+                if(data.children){//Outdated
+                    new Function('i','newelm', `(${data.children})(i,newelm)`)(i,newelm);
+                }
             }
             return 
         }
-        if (!data.cls) {
-            data.cls = this.randomstr(10);
+        data.cls = data.cls || this.randomelement(10) 
+        data.content = data.content || ''
+        if (data.input){
+            var element = document.createElement('input')
+            element.setAttribute("class",data.cls)
+        }else{
+            var element = document.createElement(data.cls)
         }
-        if (!data.content) {
-            data.content = '';
-        }
-        var element = document.createElement(data.cls);
         element.innerHTML = data.content.replace('%replace%',`<dynamic>${data.replace || ''}</dynamic>`);
-        try {
-            Object.assign(element.style, data.style);
-        } catch(err) {
-            console.warn(err)
-        }
+        Object.assign(element.style, data.style);
         if (data.attr) {
             Object.entries(data.attr).forEach(([attributeName, attributeValue]) => {
                 element.setAttribute(attributeName, attributeValue);
-            });
-        }
-        if (data.properties) {
-            Object.entries(data.properties).forEach(([selector, properties]) => {
-                const rule = `${data.cls}${selector} { ${Object.entries(properties)
-                    .map(([prop, value]) => `${prop}: ${value};`).join(' ')}
-                }`;
-                if (document.styleSheets.length == 0) {
-                    document.head.appendChild(document.createElement("style"));
-                }
-                try{
-                    document.styleSheets[0].insertRule(rule, 0);
-                }catch(err){
-                    console.warn(err)
-                }
             });
         }
         this.parent.appendChild(element);
@@ -238,39 +230,102 @@ class AX{
             parent:element,
             current:element,//Fix Later
             elements:[],
-            add:this.add,
+            addelement:this.addelement,
             identifier:data.identifier,
             index:data.index,
-            randomstr:this.randomstr
+            replace(text){
+                var replace = element.querySelector('dynamic');
+                if (replace) replace.innerHTML = text;
+                return retval
+            },
+            update(html){
+                if(html){
+                    //data.content = html // Causing Access Element manipluation fix later
+                    element.innerHTML = html
+                    return retval
+                }else{
+                    return element.innerHTML
+                }
+            },
+            fade(type,ms=500){
+                if(type=='in'){
+                    element.style.display = 'block'
+                    function increment(value = 0) {
+                        element.style.opacity = String(value);
+                        if (element.style.opacity !== '1') {
+                            setTimeout(() => {
+                                increment(value + 0.1);
+                            }, ms / 10);
+                        }
+                    };increment()
+                }else if(type=='out'){
+                    element.style.opacity= 1
+                    function decrement() {
+                        (element.style.opacity -= 0.1) < 0 ? element.style.display = 'none' : setTimeout(() => {
+                            decrement();
+                        }, ms / 10);
+                    };decrement()
+                    setTimeout(function() {
+                        element.style.display = 'none'
+                    },ms)
+                }
+                return retval
+            },
+            style(type,val) {
+                if (typeof type === 'object') {
+                    data.style = type
+                }else{
+                    if(val){
+                        data.style[type] = val
+                    }else{
+                        return window.getComputedStyle(element).getPropertyValue(type)
+                    }
+                }
+                Object.assign(element.style, data.style);
+                return retval
+            },
+            attr(type,val){
+                if (type){
+                    if (val){
+                        element.setAttribute(type,val)
+                    }else{
+                        return element.getAttribute(type)
+                    }
+                }
+                return retval
+            },
+            randomelement:this.randomelement
         }
-        retval = {...retval,...UI}
         if(data.onclick){
             element.onclick = function() {
-                data.onclick(retval)
+                new Function('retval', `(${data.onclick})(retval)`)(retval);
             };
         }
         if(data.onload){
-            data.onload(retval)
+            new Function('retval', `(${data.onload})(retval)`)(retval);
         }
         this.elements.push(retval);
         if (data.nested) {
             Object.values(data.nested).forEach(nestedData => {
-                retval.add({...nestedData,index:data.index});
+                retval.addelement(nestedData);
             });
         }
         return retval;
     }
     
-    randomstr(length){
+    randomelement(length){
         let result = '';
-        for (let i = 0; i < length; i++) {
-            const randomCharCode = Math.floor(Math.random() * (122 - 97 + 1)) + 97;
-            result += String.fromCharCode(randomCharCode);
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+        const charactersLength = characters.length;
+        let counter = 0;
+        while (counter < length) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+            counter += 1;
         }
         return result;
     }
-
-    httpreq(url, method, data, callback) {// Make better
+    
+    httpreq(url, method, data, callback) {
         const xhr = new XMLHttpRequest();
         xhr.open(method, url, true);
         xhr.onreadystatechange = function () {
@@ -286,98 +341,3 @@ class AX{
         }
     }
 }
-
-UI = {
-    attr(type,val){
-        if (type){
-            if (val){
-                this.current.setAttribute(type,val)
-            }else{
-                return this.current.getAttribute(type)
-            }
-        }
-        return this
-    },
-    replace(text){
-        var replace = this.current.querySelector('dynamic');
-        if (replace) replace.innerHTML = text;
-        return this
-    },
-    update(html){
-        if(html){
-            this.current.innerHTML = html
-            return this
-        }else{
-            return this.current.innerHTML
-        }
-    },
-    style(type,val){
-        var element = this.current
-        if (typeof type === 'object') {
-            for(let k in type){
-                this.style(k,type[k])
-            }
-        }else{
-            if(val){
-                element.style[type] = val
-            }else{
-                return window.getComputedStyle(element).getPropertyValue(type)
-            }
-        }
-        return this
-    },
-    fade(type,duration = 500,cb){
-        var element = this.current
-        if(type == "in"){
-            element.style.opacity = 0;
-            element.style.display = 'block';
-            let last = +new Date();
-            let tick = function() {
-                element.style.opacity = +element.style.opacity + (new Date() - last) / duration;
-                last = +new Date();
-                if (+element.style.opacity < 1) {
-                    (window.requestAnimationFrame && requestAnimationFrame(tick)) || setTimeout(tick, 16);
-                }
-            }
-            tick()
-        }else{
-            element.style.opacity = 1;
-            let last = +new Date();
-            let tick = function() {
-                element.style.opacity = +element.style.opacity - (new Date() - last) / duration;
-                last = +new Date();
-                if (+element.style.opacity > 0) {
-                    (window.requestAnimationFrame && requestAnimationFrame(tick)) || setTimeout(tick, 16);
-                } else {
-                    element.style.display = 'none';
-                }
-            }
-            tick()
-        }
-        setTimeout(function() {
-            //element.style.opacity = (type === 'in') ? 1 : 0;
-            element.style.opacity = 'unset';
-            if (cb && typeof cb === "function") {
-                cb();
-            }
-        }, duration + 50);
-    }
-}
-
-window.onload = async () => {
-    const ax = document.querySelector('ax');
-    if (ax) {
-        const file = ax.getAttribute('src');
-        const parent = ax.getAttribute('parent') || "body";
-        const instance = new AX({ parent });
-        try {
-            console.log(`${file}: Loaded`);
-            if (window.axload && typeof window.axload === 'function') {
-                window.axload(instance);
-            }
-            await instance.load(file);
-        } catch (error) {
-            console.error(`Error loading ${file}:`, error);
-        }
-    }
-};
