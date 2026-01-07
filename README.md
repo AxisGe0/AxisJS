@@ -1,7 +1,7 @@
 
 # AxisJS
 
-**AxisJS (v2.0.0) ** is a lightweight, declarative JavaScript framework for building dynamic user interfaces using a custom configuration format (`.ax`). Instead of writing imperative DOM code, developers describe UI structure, styling, and behavior in `.ax` files, which AxisJS parses and renders at runtime.
+**AxisJS (v2.0.0)** is a lightweight, declarative JavaScript framework for building dynamic user interfaces using a custom configuration format (`.ax`). Instead of writing imperative DOM code, developers describe UI structure, styling, and behavior in `.ax` files, which AxisJS parses and renders at runtime.
 
 AxisJS is designed for simplicity and flexibility. It runs entirely in the browser, requires no build step, and provides a small but expressive API for interacting with rendered elements.
 
