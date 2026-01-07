@@ -34,7 +34,7 @@ AxisJS is designed for simplicity and flexibility. It runs entirely in the brows
 ---
 
 ## Getting Started
-
+**[Demo here](https://axisge0.github.io/AxisJS/)**
 ### Include AxisJS
 
 ```html
